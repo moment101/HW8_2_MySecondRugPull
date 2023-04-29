@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.24;
+pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "../src/FiatTokenV2_1.sol";
@@ -59,6 +59,10 @@ contract FiatTokenV3Test is Test {
         vm.startPrank(admin);
         console.log(proxy.admin());
         assertEq(proxy.admin(), admin);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        assertEq(proxy.name(), "USD Coin");
     }
 
     // Case 2: Admin can only call upgradeTo & upgradeToAndCall （Transparent Proxy）
