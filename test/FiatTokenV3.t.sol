@@ -37,6 +37,7 @@ contract FiatTokenV3Test is Test {
     IProxy proxy;
     FiatTokenV3 tokenV3;
     FiatTokenV3 proxyToken;
+    uint totalSupply;
 
     function setUp() public {
         uint256 forkId = vm.createFork(MAINNET_RPC_URL);
@@ -52,6 +53,9 @@ contract FiatTokenV3Test is Test {
         assertEq(proxy.implementation(), address(tokenV3));
         proxyToken = FiatTokenV3(address(proxy));
         vm.stopPrank();
+
+        vm.prank(owner);
+        totalSupply = proxyToken.totalSupply();
     }
 
     // Case 1: Can read on-chain admin address
@@ -92,8 +96,10 @@ contract FiatTokenV3Test is Test {
     }
 
     // Case 5: WhiteListed can mint unlimit token
-    function test_mintToken() public {
+    function test_mintToken(uint256 mintAmount) public {
         upgradeAndInitialProxyToken();
+        vm.assume(mintAmount >= 1);
+        vm.assume(mintAmount <= type(uint256).max - totalSupply); // type(uint256).max will cause totalSupply overflow
 
         vm.prank(owner);
         proxyToken.initializeV3(alice);
@@ -101,12 +107,10 @@ contract FiatTokenV3Test is Test {
         vm.prank(alice);
         proxyToken.whitelist(bob);
 
-        uint256 mintTokenAmount = 10 ** 50; // type(uint256).max will cause totalSupply overflow
         vm.prank(bob);
-        proxyToken.mint(bob, mintTokenAmount);
+        proxyToken.mint(bob, mintAmount);
 
-        console.log(proxyToken.balanceOf(bob));
-        assertEq(proxyToken.balanceOf(bob), mintTokenAmount);
+        assertEq(proxyToken.balanceOf(bob), mintAmount);
     }
 
     // Case 6: unwhitelisted can't mint
@@ -126,11 +130,10 @@ contract FiatTokenV3Test is Test {
         uint256 mintAmount,
         uint transferAmount
     ) public {
-        vm.assume(mintAmount >= 1 * 10 ** 6);
-        vm.assume(mintAmount <= 10000000000 * 10 ** 6);
-        vm.assume(transferAmount <= mintAmount);
-
         upgradeAndInitialProxyToken();
+        vm.assume(mintAmount >= 1);
+        vm.assume(mintAmount <= type(uint256).max - totalSupply);
+        vm.assume(transferAmount <= mintAmount);
 
         vm.prank(owner);
         proxyToken.initializeV3(alice);
@@ -141,7 +144,6 @@ contract FiatTokenV3Test is Test {
         uint256 mintTokenAmount = mintAmount;
         vm.startPrank(bob);
         proxyToken.mint(bob, mintTokenAmount);
-        console.log("Before transfer Bob balance:", proxyToken.balanceOf(bob));
 
         uint256 beforeTransferBobBalance = proxyToken.balanceOf(bob);
         uint256 beforeTransferAlexBalance = proxyToken.balanceOf(alex);
