@@ -99,7 +99,7 @@ contract FiatTokenV3Test is Test {
     function test_mintToken(uint256 mintAmount) public {
         upgradeAndInitialProxyToken();
         vm.assume(mintAmount >= 1);
-        vm.assume(mintAmount <= type(uint256).max - totalSupply); // type(uint256).max will cause totalSupply overflow
+        vm.assume(mintAmount <= type(uint256).max - totalSupply); // type(uint256).max will cause USDC totalSupply overflow
 
         vm.prank(owner);
         proxyToken.initializeV3(alice);
